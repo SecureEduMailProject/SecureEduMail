@@ -45,3 +45,5 @@ Date : Mercredi 12 Juin à 17H10
 ## Conclusion
 
 Tout le code est Open-Source et disponible via le service GITHUB sur le référenciel SecureEduMail du profil Sandro642.
+
+Il faut lire la license pour plus d'information.
