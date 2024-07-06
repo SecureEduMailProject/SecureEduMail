@@ -1,4 +1,5 @@
 <h1 align="center">SecureEduMail</h1>
+<p align="center"><img src="https://img.shields.io/badge/Open-Source-BDFF00?style=for-the-badge" alt="badge open-soure">
 
 > Débutement du projet le Samedi 6 Juillet 2024
 
