@@ -1,4 +1,4 @@
-# SecureEduMail
+<h1 align="center">SecureEduMail</h1>
 
 > Débutement du projet le Samedi 6 Juillet 2024
 
