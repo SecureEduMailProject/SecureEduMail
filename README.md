@@ -1,6 +1,6 @@
 # SecureEduMail
 
-<center><p>Débutement du projet le Samedi 6 Juillet</p></center>
+> Débutement du projet le Samedi 6 Juillet
 
 ## Déclaration d'Intention
 
