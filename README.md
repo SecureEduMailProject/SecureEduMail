@@ -1,6 +1,6 @@
 # SecureEduMail
 
-> Débutement du projet le Samedi 6 Juillet
+> Débutement du projet le Samedi 6 Juillet 2024
 
 ## Déclaration d'Intention
 
