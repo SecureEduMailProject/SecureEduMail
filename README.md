@@ -4,7 +4,6 @@
 <img src="https://img.shields.io/badge/Comming-Soon-00ED90?style=for-the-badge" alt="badge comming soon">
 
 > Débutement du projet le Samedi 6 Juillet 2024
-> Projet en : Rust, Typescript.  Tauri avec React
 
 ## Déclaration d'Intention
 
