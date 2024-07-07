@@ -1,5 +1,5 @@
 [package]
-name = "secureedumail"
+name = "SecureEduMail"
 version = "0.1.0"
 description = "SecureEduMail est un projet visant à développer une messagerie électronique sécurisée dans un cadre éducatif."
 authors = ["Sandro642"]
