@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <h1 align="center">🌻 SecureEduMail</h1>
 <p align="center"><img src="https://img.shields.io/badge/Open-Source-BDFF00?style=for-the-badge" alt="badge open-soure">
 <img src="https://img.shields.io/badge/LICENSE-CC%20BY--NC--SA%204.0-18E104?style=for-the-badge" alt="badge license">
@@ -52,3 +53,12 @@ Date : Mercredi 12 Juin à 17H10
 Tout le code est Open-Source et disponible via le service GITHUB sur le référenciel SecureEduMail du profil Sandro642.
 
 Il faut lire la license pour plus d'information.
+=======
+# Tauri + React + Typescript
+
+This template should help get you started developing with Tauri, React and Typescript in Vite.
+
+## Recommended IDE Setup
+
+- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+>>>>>>> eb70807 (First commit)
