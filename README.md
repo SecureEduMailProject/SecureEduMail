@@ -22,7 +22,7 @@ SecureEduMail est un projet visant à développer une messagerie électronique s
 - Assurer la conformité avec les lois et réglementations sur la protection des données.
 
 **Usage :**  
-Ce projet est strictement à but éducatif. Il est conçu pour être utilisé dans un cadre scolaire et personnel uniquement. En aucun cas, il ne doit être utilisé à des fins illégales ou malveillantes.
+Ce projet est strictement à but éducatif. Il est conçu pour être utilisé dans un cadre personnel uniquement. En aucun cas, il ne doit être utilisé à des fins illégales ou malveillantes.
 
 **Responsabilité :**  
 Je, soussigné SORIA Sandro, certifie que ce projet est réalisé dans un cadre éducatif et personnel. Je m'engage à respecter les lois et les réglementations en vigueur concernant la sécurité informatique et la protection des données personnelles.
