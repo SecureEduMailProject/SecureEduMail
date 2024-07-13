@@ -4,6 +4,7 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 
 import axios from 'axios';
+import router from 'next/router';
 
 const theme = createTheme();
 
