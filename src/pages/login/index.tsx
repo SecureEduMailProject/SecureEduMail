@@ -31,7 +31,7 @@ const Login: React.FC = () => {
       if (response.status === 200) {
         console.log('Connexion réussie');
         // Redirection vers la page dashboard après une connexion réussie
-        router.push('@pages/dashboard');
+        router.push('./dashboard');
       } else {
         // Afficher un message d'erreur si la connexion échoue
         setErrorMessage(response.data.msg || 'Échec de la connexion. Veuillez vérifier vos informations.');

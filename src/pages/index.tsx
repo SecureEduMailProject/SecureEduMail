@@ -1,5 +1,6 @@
 import { Button, Container, Typography, Box } from '@mui/material';
 import { useRouter } from 'next/router';
+import React from 'react';
 
 const Home = () => {
   const router = useRouter();

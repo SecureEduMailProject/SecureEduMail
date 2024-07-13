@@ -31,6 +31,9 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp'; // Ajout de l'icône pour Se déconnecter
 
+// Import de l'API Tauri
+import { invoke } from '@tauri-apps/api/tauri';
+
 const drawerWidth = 240;
 
 const openedMixin = (theme: Theme): CSSObject => ({
@@ -129,8 +132,21 @@ const getFirstSentence = (text: string) => {
 };
 
 // Composant principal ComponentBox
-function ComponentBox() {
+function ComponentBox({ filter }: { filter: string }) {
   const [mailsState, setMailsState] = React.useState<Mail[]>(initialMails);
+
+  // Charger les favoris depuis localStorage
+  React.useEffect(() => {
+    const storedMails = localStorage.getItem('mails');
+    if (storedMails) {
+      setMailsState(JSON.parse(storedMails));
+    }
+  }, []);
+
+  // Sauvegarder les favoris dans localStorage
+  React.useEffect(() => {
+    localStorage.setItem('mails', JSON.stringify(mailsState));
+  }, [mailsState]);
 
   const handleFavorite = (index: number) => {
     const updatedMails = [...mailsState];
@@ -158,6 +174,8 @@ function ComponentBox() {
     // For demonstration purposes, we'll just log a message
     console.log('Refreshing mails...');
   };
+
+  const filteredMails = filter === 'Favoris' ? mailsState.filter(mail => mail.favorite) : mailsState;
 
   return (
     <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
@@ -188,7 +206,7 @@ function ComponentBox() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {mailsState.map((mail, index) => (
+            {filteredMails.map((mail, index) => (
               <TableRow key={index}>
                 <TableCell>{mail.recipient}</TableCell>
                 <TableCell>{mail.title}</TableCell>
@@ -231,6 +249,7 @@ export default function MiniDrawer() {
   const theme = useTheme();
   const [open, setOpen] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [filter, setFilter] = React.useState<string>('Boîte de réception');
 
   const handleDrawerOpen = () => {
     setOpen(true);
@@ -249,6 +268,15 @@ export default function MiniDrawer() {
   };
 
   const menuOpen = Boolean(anchorEl);
+
+  // Informations de l'utilisateur
+  const userEmail = 'xxxxxx@protect-node.secureedumail.xyz';
+  const userName = 'xxxxxxxxx';
+
+  const handleLogout = () => {
+    console.log('Déconnexion de l\'utilisateur...');
+    invoke('quit_application'); // Appel de la commande Tauri pour quitter l'application
+  };
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -270,6 +298,14 @@ export default function MiniDrawer() {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             SecureEduMail
           </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
+            <Typography variant="body1" sx={{ mr: 2 }}>
+              {userEmail}
+            </Typography>
+            <Typography variant="body1">
+              {userName}
+            </Typography>
+          </Box>
           <IconButton color="inherit">
             <Badge badgeContent={4} color="secondary">
               <NotificationsIcon />
@@ -323,7 +359,7 @@ export default function MiniDrawer() {
             <MenuItem onClick={handleMenuClose}>Profil</MenuItem>
             <MenuItem onClick={handleMenuClose}>Mon compte</MenuItem>
             <Divider />
-            <MenuItem onClick={handleMenuClose}>Se déconnecter</MenuItem>
+            <MenuItem onClick={handleLogout}>Se déconnecter</MenuItem>
           </Menu>
         </Toolbar>
       </AppBar>
@@ -343,6 +379,7 @@ export default function MiniDrawer() {
                   justifyContent: open ? 'initial' : 'center',
                   px: 2.5,
                 }}
+                onClick={() => setFilter(text)}
               >
                 <ListItemIcon
                   sx={{
@@ -357,61 +394,31 @@ export default function MiniDrawer() {
               </ListItemButton>
             </ListItem>
           ))}
-          {/* Ajout du bouton Se déconnecter */}
-          <ListItem disablePadding sx={{ display: 'block' }}>
-            <ListItemButton
-              onClick={() => {
-                // Mettre ici la logique de déconnexion
-                console.log('Déconnexion de l\'utilisateur...');
-                // Fermer l'application (dans un contexte réel, cela peut nécessiter une approche différente)
-                window.close();
-              }}
+        </List>
+        <Box sx={{ flexGrow: 1 }} />
+        <ListItem disablePadding sx={{ display: 'block' }}>
+          <ListItemButton
+            onClick={handleLogout} // Utilisation de la fonction handleLogout
+            sx={{
+              minHeight: 48,
+              justifyContent: open ? 'initial' : 'center',
+              px: 2.5,
+            }}
+          >
+            <ListItemIcon
               sx={{
-                minHeight: 48,
-                justifyContent: open ? 'initial' : 'center',
-                px: 2.5,
+                minWidth: 0,
+                mr: open ? 3 : 'auto',
+                justifyContent: 'center',
               }}
             >
-              <ListItemIcon
-                sx={{
-                  minWidth: 0,
-                  mr: open ? 3 : 'auto',
-                  justifyContent: 'center',
-                }}
-              >
-                <ExitToAppIcon />
-              </ListItemIcon>
-              <ListItemText primary="Se déconnecter" sx={{ opacity: open ? 1 : 0 }} />
-            </ListItemButton>
-          </ListItem>
-        </List>
-        <Divider />
-        <List>
-          {['Corbeille', 'Indésirables', 'Documentation'].map((text, index) => (
-            <ListItem key={text} disablePadding sx={{ display: 'block' }}>
-              <ListItemButton
-                sx={{
-                  minHeight: 48,
-                  justifyContent: open ? 'initial' : 'center',
-                  px: 2.5,
-                }}
-              >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 0,
-                    mr: open ? 3 : 'auto',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
-                </ListItemIcon>
-                <ListItemText primary={text} sx={{ opacity: open ? 1 : 0 }} />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
+              <ExitToAppIcon />
+            </ListItemIcon>
+            <ListItemText primary="Se déconnecter" sx={{ opacity: open ? 1 : 0 }} />
+          </ListItemButton>
+        </ListItem>
       </Drawer>
-      <ComponentBox />
+      <ComponentBox filter={filter} />
     </Box>
   );
 }
