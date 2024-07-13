@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 <h1 align="center">🌻 SecureEduMail</h1>
 <p align="center"><img src="https://img.shields.io/badge/Open-Source-BDFF00?style=for-the-badge" alt="badge open-soure">
 <img src="https://img.shields.io/badge/LICENSE-CC%20BY--NC--SA%204.0-18E104?style=for-the-badge" alt="badge license">
@@ -91,4 +90,3 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
->>>>>>> 56d6efb (Initial commit)
