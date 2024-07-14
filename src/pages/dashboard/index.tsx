@@ -29,9 +29,10 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ArchiveIcon from '@mui/icons-material/Archive';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import ExitToAppIcon from '@mui/icons-material/ExitToApp'; // Ajout de l'icône pour Se déconnecter
-import {destroySession} from "@/utils/Session";
-import router from "next/router";
+import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import axios from 'axios'; // Importation de axios
+import { destroySession, getAuthToken } from '@/utils/Session';
+import router from 'next/router';
 
 const drawerWidth = 240;
 
@@ -90,25 +91,25 @@ const AppBar = styled(MuiAppBar, {
 }));
 
 const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' })(
-  ({ theme, open }) => ({
-    width: drawerWidth,
-    flexShrink: 0,
-    whiteSpace: 'nowrap',
-    boxSizing: 'border-box',
-    ...(open && {
-      ...openedMixin(theme),
-      '& .MuiDrawer-paper': openedMixin(theme),
+    ({ theme, open }) => ({
+      width: drawerWidth,
+      flexShrink: 0,
+      whiteSpace: 'nowrap',
+      boxSizing: 'border-box',
+      ...(open && {
+        ...openedMixin(theme),
+        '& .MuiDrawer-paper': openedMixin(theme),
+      }),
+      ...(!open && {
+        ...closedMixin(theme),
+        '& .MuiDrawer-paper': closedMixin(theme),
+      }),
     }),
-    ...(!open && {
-      ...closedMixin(theme),
-      '& .MuiDrawer-paper': closedMixin(theme),
-    }),
-  }),
 );
 
 // Définition du type Mail
 type Mail = {
-  recipient: string;
+  sender: string;
   title: string;
   text: string;
   sentTime: string;
@@ -118,9 +119,8 @@ type Mail = {
 
 // Exemple de données de mails
 const initialMails: Mail[] = [
-  { recipient: 'john.doe@example.com', title: 'Meeting Reminder', text: 'Just a reminder about the meeting tomorrow at 10 AM.', sentTime: '09:00 AM', isAdmin: true, favorite: false },
-  { recipient: 'jane.smith@example.com', title: 'Project Update', text: 'The project is progressing as planned.', sentTime: '11:15 AM', isAdmin: false, favorite: false },
-  
+  { sender: 'john.doe@example.com', title: 'Meeting Reminder', text: 'Just a reminder about the meeting tomorrow at 10 AM.', sentTime: '09:00 AM', isAdmin: true, favorite: false },
+  { sender: 'jane.smith@example.com', title: 'Project Update', text: 'The project is progressing as planned.', sentTime: '11:15 AM', isAdmin: false, favorite: false },
   // Ajoutez plus de mails ici
 ];
 
@@ -133,19 +133,25 @@ const getFirstSentence = (text: string) => {
 // Composant principal ComponentBox
 function ComponentBox({ filter }: { filter: string }) {
   const [mailsState, setMailsState] = React.useState<Mail[]>(initialMails);
+  const [archivedMailsState, setArchivedMailsState] = React.useState<Mail[]>([]);
 
-  // Charger les favoris depuis localStorage
+  // Charger les mails depuis localStorage
   React.useEffect(() => {
     const storedMails = localStorage.getItem('mails');
     if (storedMails) {
       setMailsState(JSON.parse(storedMails));
     }
+    const storedArchivedMails = localStorage.getItem('archivedMails');
+    if (storedArchivedMails) {
+      setArchivedMailsState(JSON.parse(storedArchivedMails));
+    }
   }, []);
 
-  // Sauvegarder les favoris dans localStorage
+  // Sauvegarder les mails dans localStorage
   React.useEffect(() => {
     localStorage.setItem('mails', JSON.stringify(mailsState));
-  }, [mailsState]);
+    localStorage.setItem('archivedMails', JSON.stringify(archivedMailsState));
+  }, [mailsState, archivedMailsState]);
 
   const handleFavorite = (index: number) => {
     const updatedMails = [...mailsState];
@@ -159,8 +165,9 @@ function ComponentBox({ filter }: { filter: string }) {
   };
 
   const handleArchive = (index: number) => {
-    // Implement archiving logic here
-    console.log('Archive mail at index:', index);
+    const mailToArchive = mailsState[index];
+    setArchivedMailsState([...archivedMailsState, mailToArchive]);
+    handleDelete(index);
   };
 
   const handleView = (index: number) => {
@@ -174,72 +181,76 @@ function ComponentBox({ filter }: { filter: string }) {
     console.log('Refreshing mails...');
   };
 
-  const filteredMails = filter === 'Favoris' ? mailsState.filter(mail => mail.favorite) : mailsState;
+  const filteredMails = filter === 'Favoris' ? mailsState.filter(mail => mail.favorite) :
+      filter === 'Archivés' ? archivedMailsState :
+          mailsState;
 
   return (
-    <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-      <DrawerHeader />
-      <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Typography variant="h4" gutterBottom>
-          Liste des Mails
-        </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<RefreshIcon />}
-          onClick={handleRefresh}
-        >
-          Rafraîchir
-        </Button>
-      </Box>
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Destinataire</TableCell>
-              <TableCell>Titre</TableCell>
-              <TableCell>Texte</TableCell>
-              <TableCell>Rôle</TableCell>
-              <TableCell>Heure</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredMails.map((mail, index) => (
-              <TableRow key={index}>
-                <TableCell>{mail.recipient}</TableCell>
-                <TableCell>{mail.title}</TableCell>
-                <TableCell>{getFirstSentence(mail.text)}</TableCell>
-                <TableCell>{mail.isAdmin ? 'Administrateur' : ''}</TableCell>
-                <TableCell>{mail.sentTime}</TableCell>
-                <TableCell>
-                  <Tooltip title="Favoris">
-                    <IconButton onClick={() => handleFavorite(index)}>
-                      <StarIcon color={mail.favorite ? 'primary' : 'disabled'} />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Supprimer">
-                    <IconButton onClick={() => handleDelete(index)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Archiver">
-                    <IconButton onClick={() => handleArchive(index)}>
-                      <ArchiveIcon />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Consulter">
-                    <IconButton onClick={() => handleView(index)}>
-                      <VisibilityIcon />
-                    </IconButton>
-                  </Tooltip>
-                </TableCell>
+      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+        <DrawerHeader />
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="h4" gutterBottom>
+            Liste des Mails
+          </Typography>
+          <Button
+              variant="contained"
+              color="primary"
+              startIcon={<RefreshIcon />}
+              onClick={handleRefresh}
+          >
+            Rafraîchir
+          </Button>
+        </Box>
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Expéditeur</TableCell>
+                <TableCell>Titre</TableCell>
+                <TableCell>Texte</TableCell>
+                <TableCell>Rôle</TableCell>
+                <TableCell>Heure</TableCell>
+                <TableCell>Actions</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Box>
+            </TableHead>
+            <TableBody>
+              {filteredMails.map((mail, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{mail.sender}</TableCell>
+                    <TableCell>{mail.title}</TableCell>
+                    <TableCell>{getFirstSentence(mail.text)}</TableCell>
+                    <TableCell>{mail.isAdmin ? 'Administrateur' : ''}</TableCell>
+                    <TableCell>{mail.sentTime}</TableCell>
+                    <TableCell>
+                      <Tooltip title="Favoris">
+                        <IconButton onClick={() => handleFavorite(index)}>
+                          <StarIcon color={mail.favorite ? 'primary' : 'disabled'} />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Supprimer">
+                        <IconButton onClick={() => handleDelete(index)}>
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                      {filter !== 'Archivés' && (
+                          <Tooltip title="Archiver">
+                            <IconButton onClick={() => handleArchive(index)}>
+                              <ArchiveIcon />
+                            </IconButton>
+                          </Tooltip>
+                      )}
+                      <Tooltip title="Consulter">
+                        <IconButton onClick={() => handleView(index)}>
+                          <VisibilityIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
   );
 }
 
@@ -249,6 +260,26 @@ export default function MiniDrawer() {
   const [open, setOpen] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [filter, setFilter] = React.useState<string>('Boîte de réception');
+  const [userName, setUserName] = React.useState<string>('');
+  const [userEmail, setUserEmail] = React.useState<string>('');
+
+  React.useEffect(() => {
+    const token = getAuthToken();
+    if (token) {
+      // Appel à l'API pour récupérer les informations de l'utilisateur
+      axios.get(`http://localhost:3000/api/v1/account/${token}/getAccountInfo`)
+          .then(response => {
+            const { user } = response.data;
+            setUserName(user.username);
+            setUserEmail(user.SecureUIDMail);
+          })
+          .catch(error => {
+            console.error('Error fetching user info:', error);
+          });
+    } else {
+      router.push('/login');
+    }
+  }, []);
 
   const handleDrawerOpen = () => {
     setOpen(true);
@@ -268,156 +299,167 @@ export default function MiniDrawer() {
 
   const menuOpen = Boolean(anchorEl);
 
-  // Informations de l'utilisateur
-  const userEmail = 'xxxxxx@protect-node.secureedumail.xyz';
-  const userName = 'xxxxxxxxx';
-
   const handleLogout = () => {
-    destroySession()
-    router.push('../login')
+    destroySession();
+    router.push('/login');
   };
 
   return (
-    <Box sx={{ display: 'flex' }}>
-      <CssBaseline />
-      <AppBar position="fixed" open={open}>
-        <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            onClick={handleDrawerOpen}
-            edge="start"
-            sx={{
-              marginRight: 5,
-              ...(open && { display: 'none' }),
-            }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            SecureEduMail
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
-            <Typography variant="body1" sx={{ mr: 2 }}>
-              {userEmail}
+      <Box sx={{ display: 'flex' }}>
+        <CssBaseline />
+        <AppBar position="fixed" open={open}>
+          <Toolbar>
+            <IconButton
+                color="inherit"
+                aria-label="open drawer"
+                onClick={handleDrawerOpen}
+                edge="start"
+                sx={{
+                  marginRight: 5,
+                  ...(open && { display: 'none' }),
+                }}
+            >
+              <MenuIcon />
+            </IconButton>
+            <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+              SecureEduMail
             </Typography>
-            <Typography variant="body1">
-              {userName}
-            </Typography>
-          </Box>
-          <IconButton color="inherit">
-            <Badge badgeContent={4} color="secondary">
-              <NotificationsIcon />
-            </Badge>
-          </IconButton>
-          <IconButton
-            edge="end"
-            aria-label="account of current user"
-            aria-controls="account-menu"
-            aria-haspopup="true"
-            onClick={handleMenuOpen}
-            color="inherit"
-          >
-            <Avatar alt="User" src="/static/images/avatar/1.jpg" />
-          </IconButton>
-          <Menu
-            id="account-menu"
-            anchorEl={anchorEl}
-            open={menuOpen}
-            onClose={handleMenuClose}
-            onClick={handleMenuClose}
-            PaperProps={{
-              elevation: 0,
-              sx: {
-                overflow: 'visible',
-                filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
-                mt: 1.5,
-                '& .MuiAvatar-root': {
-                  width: 32,
-                  height: 32,
-                  ml: -0.5,
-                  mr: 1,
-                },
-                '&:before': {
-                  content: '""',
-                  display: 'block',
-                  position: 'absolute',
-                  top: 0,
-                  right: 14,
-                  width: 10,
-                  height: 10,
-                  bgcolor: 'background.paper',
-                  transform: 'translateY(-50%) rotate(45deg)',
-                  zIndex: 0,
-                },
-              },
-            }}
-            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-          >
-            <MenuItem onClick={handleMenuClose}>Profil</MenuItem>
-            <MenuItem onClick={handleMenuClose}>Mon compte</MenuItem>
-            <Divider />
-            <MenuItem onClick={handleLogout}>Se déconnecter</MenuItem>
-          </Menu>
-        </Toolbar>
-      </AppBar>
-      <Drawer variant="permanent" open={open}>
-        <DrawerHeader>
-          <IconButton onClick={handleDrawerClose}>
-            {theme.direction === 'rtl' ? <ChevronRightIcon /> : <ChevronLeftIcon />}
-          </IconButton>
-        </DrawerHeader>
-        <Divider />
-        <List>
-          {['Boîte de réception', 'Favoris', 'Importants', 'Brouillons'].map((text, index) => (
-            <ListItem key={text} disablePadding sx={{ display: 'block' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
+              <Typography variant="body1" sx={{ mr: 2 }}>
+                {userEmail} {/* Affichage de l'email de l'utilisateur */}
+              </Typography>
+              <Typography variant="body1">
+                {userName} {/* Affichage du nom d'utilisateur */}
+              </Typography>
+            </Box>
+            <IconButton color="inherit">
+              <Badge badgeContent={4} color="secondary">
+                <NotificationsIcon />
+              </Badge>
+            </IconButton>
+            <IconButton
+                edge="end"
+                aria-label="account of current user"
+                aria-controls="account-menu"
+                aria-haspopup="true"
+                onClick={handleMenuOpen}
+                color="inherit"
+            >
+              <Avatar alt="User" src="/static/images/avatar/1.jpg" />
+            </IconButton>
+            <Menu
+                id="account-menu"
+                anchorEl={anchorEl}
+                open={menuOpen}
+                onClose={handleMenuClose}
+                onClick={handleMenuClose}
+                PaperProps={{
+                  elevation: 0,
+                  sx: {
+                    overflow: 'visible',
+                    filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
+                    mt: 1.5,
+                    '& .MuiAvatar-root': {
+                      width: 32,
+                      height: 32,
+                      ml: -0.5,
+                      mr: 1,
+                    },
+                    '&:before': {
+                      content: '""',
+                      display: 'block',
+                      position: 'absolute',
+                      top: 0,
+                      right: 14,
+                      width: 10,
+                      height: 10,
+                      bgcolor: 'background.paper',
+                      transform: 'translateY(-50%) rotate(45deg)',
+                      zIndex: 0,
+                    },
+                  },
+                }}
+                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            >
+              <MenuItem onClick={handleMenuClose}>Profil</MenuItem>
+              <MenuItem onClick={handleMenuClose}>Mon compte</MenuItem>
+              <Divider />
+              <MenuItem onClick={handleLogout}>Se déconnecter</MenuItem>
+            </Menu>
+          </Toolbar>
+        </AppBar>
+        <Drawer variant="permanent" open={open}>
+          <DrawerHeader>
+            <IconButton onClick={handleDrawerClose}>
+              {theme.direction === 'rtl' ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+            </IconButton>
+          </DrawerHeader>
+          <Divider />
+          <List>
+            {['Boîte de réception', 'Favoris', 'Importants', 'Brouillons', 'Archivés'].map((text, index) => (
+                <ListItem key={text} disablePadding sx={{ display: 'block' }}>
+                  <ListItemButton
+                      sx={{
+                        minHeight: 48,
+                        justifyContent: open ? 'initial' : 'center',
+                        px: 2.5,
+                      }}
+                      onClick={() => setFilter(text)}
+                  >
+                    <ListItemIcon
+                        sx={{
+                          minWidth: 0,
+                          mr: open ? 3 : 'auto',
+                          justifyContent: 'center',
+                        }}
+                    >
+                      {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+                    </ListItemIcon>
+                    <ListItemText primary={text} sx={{ opacity: open ? 1 : 0 }} />
+                  </ListItemButton>
+                </ListItem>
+            ))}
+          </List>
+          <Divider />
+          <List>
+            <ListItem disablePadding sx={{ display: 'block' }}>
               <ListItemButton
+                  sx={{
+                    minHeight: 48,
+                    justifyContent: open ? 'initial' : 'center',
+                    px: 2.5,
+                  }}
+                  onClick={() => setFilter('Documentation')}
+              >
+                <ListItemText primary="Documentation" sx={{ opacity: open ? 1 : 0 }} />
+              </ListItemButton>
+            </ListItem>
+          </List>
+          <Box sx={{ flexGrow: 1 }} />
+          <ListItem disablePadding sx={{ display: 'block' }}>
+            <ListItemButton
+                onClick={handleLogout} // Utilisation de la fonction handleLogout
                 sx={{
                   minHeight: 48,
                   justifyContent: open ? 'initial' : 'center',
                   px: 2.5,
                 }}
-                onClick={() => setFilter(text)}
-              >
-                <ListItemIcon
+            >
+              <ListItemIcon
                   sx={{
                     minWidth: 0,
                     mr: open ? 3 : 'auto',
                     justifyContent: 'center',
                   }}
-                >
-                  {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
-                </ListItemIcon>
-                <ListItemText primary={text} sx={{ opacity: open ? 1 : 0 }} />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-        <Box sx={{ flexGrow: 1 }} />
-        <ListItem disablePadding sx={{ display: 'block' }}>
-          <ListItemButton
-            onClick={handleLogout} // Utilisation de la fonction handleLogout
-            sx={{
-              minHeight: 48,
-              justifyContent: open ? 'initial' : 'center',
-              px: 2.5,
-            }}
-          >
-            <ListItemIcon
-              sx={{
-                minWidth: 0,
-                mr: open ? 3 : 'auto',
-                justifyContent: 'center',
-              }}
-            >
-              <ExitToAppIcon />
-            </ListItemIcon>
-            <ListItemText primary="Se déconnecter" sx={{ opacity: open ? 1 : 0 }} />
-          </ListItemButton>
-        </ListItem>
-      </Drawer>
-      <ComponentBox filter={filter} />
-    </Box>
+              >
+                <ExitToAppIcon />
+              </ListItemIcon>
+              <ListItemText primary="Se déconnecter" sx={{ opacity: open ? 1 : 0 }} />
+            </ListItemButton>
+          </ListItem>
+        </Drawer>
+        <ComponentBox filter={filter} />
+      </Box>
   );
 }
