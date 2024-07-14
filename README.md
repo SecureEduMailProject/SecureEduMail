@@ -2,7 +2,7 @@
 <p align="center"><img src="https://img.shields.io/badge/Open-Source-BDFF00?style=for-the-badge" alt="badge open-soure">
 <img src="https://img.shields.io/badge/LICENSE-CC%20BY--NC--SA%204.0-18E104?style=for-the-badge" alt="badge license">
 <img src="https://img.shields.io/badge/Rust-Typescript-00ED90?style=for-the-badge" alt="rust and typescript">
-<img src="https://img.shields.io/badge/Tauri-Vite-00EDE6?style=for-the-badge" alt="badge tauri and vite">
+<img src="https://img.shields.io/badge/Tauri-Next.JS-00EDE6?style=for-the-badge" alt="badge tauri and next js">
 
 > Débutement du projet le Samedi 6 Juillet 2024
 
