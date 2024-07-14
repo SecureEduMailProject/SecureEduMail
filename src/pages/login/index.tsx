@@ -2,16 +2,16 @@ import React, { useState, ChangeEvent, FormEvent } from 'react';
 import { Container, TextField, Button, Typography, Box, CssBaseline, Avatar, Grid, Link } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-
 import axios from 'axios';
 import router from 'next/router';
+import {setSessionToken} from "@/utils/Session";  // Import de l'utilitaire de gestion des cookies
 
 const theme = createTheme();
 
 interface LoginResponse {
   err: boolean;
   msg?: string;
-  username?: string;
+  token?: string;
 }
 
 const Login: React.FC = () => {
@@ -28,16 +28,15 @@ const Login: React.FC = () => {
         password,
       });
 
-      if (response.status === 200) {
+      if (response.status === 200 && response.data.token) {
         console.log('Connexion réussie');
-        // Redirection vers la page dashboard après une connexion réussie
+        setSessionToken(response.data.token); // Enregistrement du token dans le cookie
+        console.log(response.data.token);
         router.push('./dashboard');
       } else {
-        // Afficher un message d'erreur si la connexion échoue
         setErrorMessage(response.data.msg || 'Échec de la connexion. Veuillez vérifier vos informations.');
       }
     } catch (error) {
-      // Gestion des erreurs de requête
       console.error('Erreur lors de la requête de connexion :', error);
       setErrorMessage('Une erreur est survenue lors de la connexion. Veuillez réessayer.');
     }
@@ -55,20 +54,11 @@ const Login: React.FC = () => {
       <ThemeProvider theme={theme}>
         <Container component="main" maxWidth="xs">
           <CssBaseline />
-          <Box
-              sx={{
-                marginTop: 8,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-              }}
-          >
+          <Box sx={{ marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
               <LockOutlinedIcon />
             </Avatar>
-            <Typography component="h1" variant="h5">
-              Connexion
-            </Typography>
+            <Typography component="h1" variant="h5">Connexion</Typography>
             <Box component="form" onSubmit={handleFormSubmit} sx={{ mt: 3 }}>
               <TextField
                   margin="normal"
@@ -94,12 +84,7 @@ const Login: React.FC = () => {
                   value={password}
                   onChange={handlePasswordChange}
               />
-              <Button
-                  type="submit"
-                  fullWidth
-                  variant="contained"
-                  sx={{ mt: 3, mb: 2 }}
-              >
+              <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }}>
                 Connexion
               </Button>
               {errorMessage && (
@@ -109,9 +94,7 @@ const Login: React.FC = () => {
               )}
               <Grid container>
                 <Grid item xs>
-                  <Link href="#" variant="body2">
-                    J'ai oublié mon mot de passe
-                  </Link>
+                  <Link href="#" variant="body2">J'ai oublié mon mot de passe</Link>
                 </Grid>
               </Grid>
             </Box>

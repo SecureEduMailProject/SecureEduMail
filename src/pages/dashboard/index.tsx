@@ -30,9 +30,8 @@ import ArchiveIcon from '@mui/icons-material/Archive';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp'; // Ajout de l'icône pour Se déconnecter
-
-// Import de l'API Tauri
-import { invoke } from '@tauri-apps/api/tauri';
+import {destroySession} from "@/utils/Session";
+import router from "next/router";
 
 const drawerWidth = 240;
 
@@ -274,8 +273,8 @@ export default function MiniDrawer() {
   const userName = 'xxxxxxxxx';
 
   const handleLogout = () => {
-    console.log('Déconnexion de l\'utilisateur...');
-    invoke('quit_application'); // Appel de la commande Tauri pour quitter l'application
+    destroySession()
+    router.push('../login')
   };
 
   return (
