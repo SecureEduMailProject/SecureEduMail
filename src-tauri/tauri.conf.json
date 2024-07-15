@@ -29,14 +29,14 @@
         "icons/icon.icns",
         "icons/icon.ico"
       ],
-      "identifier": "com.tauri.dev",
+      "identifier": "xyz.secureedu.mail",
       "longDescription": "",
       "macOS": {
         "entitlements": null,
         "exceptionDomain": "",
         "frameworks": [],
         "providerShortName": null,
-        "signingIdentity": null
+        "signingIdentity": "Sandro Soria"
       },
       "resources": [],
       "shortDescription": "",
