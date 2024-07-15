@@ -4,7 +4,7 @@
     "beforeBuildCommand": "pnpm run build",
     "beforeDevCommand": "pnpm run dev",
     "devPath": "http://localhost:3001",
-    "distDir": "../out"
+    "distDir": "../build"
   },
   "package": {
     "productName": "SecureEduMail",
@@ -17,29 +17,19 @@
     "bundle": {
       "active": true,
       "category": "DeveloperTool",
-      "copyright": "",
-      "deb": {
-        "depends": []
-      },
-      "externalBin": [],
       "icon": [
         "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
+        "icons/64x64.png",
         "icons/icon.ico"
       ],
       "identifier": "xyz.secureedu.mail",
-      "longDescription": "",
       "macOS": {
+        "signingIdentity": null,
         "entitlements": null,
         "exceptionDomain": "",
         "frameworks": [],
-        "providerShortName": null,
-        "signingIdentity": "Sandro Soria"
+        "providerShortName": null
       },
-      "resources": [],
-      "shortDescription": "",
       "targets": "all",
       "windows": {
         "certificateThumbprint": null,
