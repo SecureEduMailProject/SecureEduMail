@@ -113,15 +113,17 @@ type Mail = {
     text: string;
     sentTime: string;
     isAdmin: boolean;
-    favorite: boolean;
-    important: boolean; // Ajout du champ important
+    favorite: boolean; // Assurez-vous que favorite est de type boolean
+    important: boolean;
 };
 
 // Fonction pour extraire la première phrase du texte
 const getFirstSentence = (text: string) => {
+    if (!text) return ''; // Vérifie si le texte est undefined ou null
     const sentences = text.split('.');
     return sentences[0] + (sentences.length > 1 ? '.' : '');
 };
+
 
 // Exemple de données de mails
 const initialMails: Mail[] = [];
@@ -130,20 +132,22 @@ const initialMails: Mail[] = [];
 function ComponentBox({ filter }: { filter: string }) {
     const [mailsState, setMailsState] = React.useState<Mail[]>([]);
     const [archivedMailsState, setArchivedMailsState] = React.useState<Mail[]>([]);
+    const [sentMailsState, setSentMailsState] = React.useState<Mail[]>([]);
     const [openMailDialog, setOpenMailDialog] = React.useState(false);
     const [recipient, setRecipient] = React.useState('');
     const [mailTitle, setMailTitle] = React.useState('');
     const [mailContent, setMailContent] = React.useState('');
     const [important, setImportant] = React.useState(false);
 
-    React.useEffect(() => {
+    function refreshMails() {
+
         const token = getAuthToken();
 
         if (token) {
+            // Fetch recipient mails
             axios.get(`http://localhost:3000/api/v1/mail/get/recipient/${token}`)
                 .then(response => {
                     const { data } = response;
-
                     if (data.mails && Array.isArray(data.mails)) {
                         const fetchedMails: Mail[] = data.mails.flatMap((mailObj: any) =>
                             Object.values(mailObj).map((mail: any) => ({
@@ -166,8 +170,37 @@ function ComponentBox({ filter }: { filter: string }) {
                 .catch(error => {
                     console.error('Error fetching mails:', error);
                 });
+
+            axios.get(`http://localhost:3000/api/v1/mail/get/sender/${token}`)
+                .then(response => {
+                    const { data } = response;
+                    console.log("Data received from API:", data);
+
+                    // Extract mails from the response
+                    const mailsArray = data.mails.flatMap((mailObj: any) =>
+                        Object.values(mailObj).map((mail: any) => ({
+                            sender: mail.sender,
+                            title: mail.title,
+                            text: mail.description || '', // Assurez-vous que text n'est jamais undefined
+                            sentTime: mail.time,
+                            isAdmin: false,
+                            favorite: false, // Assigner false par défaut pour favorite si non spécifié
+                            important: mail.important,
+                        }))
+                    );
+
+                    setSentMailsState(mailsArray);
+                })
+                .catch(error => {
+                    console.error('Error fetching sent mails:', error);
+                });
         }
+    }
+
+    React.useEffect(() => {
+        refreshMails()
     }, []);
+
 
     // Fonction pour marquer un mail comme favori
     const handleFavorite = (index: number) => {
@@ -194,6 +227,7 @@ function ComponentBox({ filter }: { filter: string }) {
         // Ici, vous récupéreriez généralement les données mises à jour depuis votre backend ou effectueriez toute autre logique pour actualiser la liste de mails
         // À des fins de démonstration, nous allons simplement afficher un message
         console.log('Refreshing mails...');
+        refreshMails()
     };
 
     // Fonction pour ouvrir le dialogue pour envoyer un mail
@@ -211,12 +245,16 @@ function ComponentBox({ filter }: { filter: string }) {
         setImportant(false);
     };
 
-    // Filtrage des mails selon l'option choisie dans la sidebar
     const filteredMails = filter === 'Favoris' ? mailsState.filter(mail => mail.favorite) :
         filter === 'Archivés' ? archivedMailsState :
             filter === 'Importants' ? archivedMailsState.filter(mail => mail.important) :
-                filter === 'Brouillons' ? [] : // Ajout de la gestion des brouillons vides
-                    mailsState;
+                filter === 'Envoyés' ? sentMailsState :
+                    filter === 'Brouillons' ? [] :
+                        mailsState;
+
+    console.log("Current filter:", filter);
+    console.log("Filtered Mails:", filteredMails);
+
 
     // Fonction pour envoyer le mail
     const handleSendMail = () => {
@@ -378,6 +416,7 @@ export default function MiniDrawer() {
     const [filter, setFilter] = React.useState<string>('Boîte de réception');
     const [userName, setUserName] = React.useState<string>('');
     const [userEmail, setUserEmail] = React.useState<string>('');
+    const [selectedItem, setSelectedItem] = React.useState<string>('Boîte de réception');
 
     // Récupérer les informations de l'utilisateur à partir de l'API
     React.useEffect(() => {
@@ -418,6 +457,11 @@ export default function MiniDrawer() {
     const handleLogout = () => {
         destroySession();
         router.push('/login');
+    };
+
+    const handleMenuClick = (item: string) => {
+        setSelectedItem(item);
+        setFilter(item)
     };
 
     return (
@@ -513,7 +557,7 @@ export default function MiniDrawer() {
                 </DrawerHeader>
                 <Divider />
                 <List>
-                    {['Boîte de réception', 'Favoris', 'Importants', 'Envoyés', 'Archivés'].map((text, index) => (
+                    {['Boîte de réception', 'Favoris', 'Envoyés', 'Importants', 'Archivés', 'Brouillons'].map((text, index) => (
                         <ListItem key={text} disablePadding sx={{ display: 'block' }}>
                             <ListItemButton
                                 sx={{
@@ -521,7 +565,8 @@ export default function MiniDrawer() {
                                     justifyContent: open ? 'initial' : 'center',
                                     px: 2.5,
                                 }}
-                                onClick={() => setFilter(text)}
+                                selected={selectedItem === text}
+                                onClick={() => handleMenuClick(text)}
                             >
                                 <ListItemIcon
                                     sx={{
@@ -530,13 +575,14 @@ export default function MiniDrawer() {
                                         justifyContent: 'center',
                                     }}
                                 >
-                                    {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+                                    {index === 0 ? <InboxIcon /> : index === 1 ? <StarIcon /> : <MailIcon />}
                                 </ListItemIcon>
                                 <ListItemText primary={text} sx={{ opacity: open ? 1 : 0 }} />
                             </ListItemButton>
                         </ListItem>
                     ))}
                 </List>
+
                 <Divider />
                 <List>
                     <ListItem disablePadding sx={{ display: 'block' }}>
@@ -553,29 +599,34 @@ export default function MiniDrawer() {
                     </ListItem>
                 </List>
                 <Box sx={{ flexGrow: 1 }} />
-                <ListItem disablePadding sx={{ display: 'block' }}>
-                    <ListItemButton
-                        onClick={handleLogout} // Utilisation de la fonction handleLogout
-                        sx={{
-                            minHeight: 48,
-                            justifyContent: open ? 'initial' : 'center',
-                            px: 2.5,
-                        }}
-                    >
-                        <ListItemIcon
+                <List>
+                    <ListItem disablePadding sx={{ display: 'block' }}>
+                        <ListItemButton
                             sx={{
-                                minWidth: 0,
-                                mr: open ? 3 : 'auto',
-                                justifyContent: 'center',
+                                minHeight: 48,
+                                justifyContent: open ? 'initial' : 'center',
+                                px: 2.5,
                             }}
+                            onClick={handleLogout}
                         >
-                            <ExitToAppIcon />
-                        </ListItemIcon>
-                        <ListItemText primary="Se déconnecter" sx={{ opacity: open ? 1 : 0 }} />
-                    </ListItemButton>
-                </ListItem>
+                            <ListItemIcon
+                                sx={{
+                                    minWidth: 0,
+                                    mr: open ? 3 : 'auto',
+                                    justifyContent: 'center',
+                                }}
+                            >
+                                <ExitToAppIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Se déconnecter" sx={{ opacity: open ? 1 : 0 }} />
+                        </ListItemButton>
+                    </ListItem>
+                </List>
             </Drawer>
-            <ComponentBox filter={filter} />
+            <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+                <ComponentBox filter={filter} />
+            </Box>
         </Box>
     );
 }
+
