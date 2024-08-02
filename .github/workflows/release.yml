@@ -3,64 +3,66 @@ name: Create Release
 on:
   push:
     branches:
-      - main
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Release tag'
-        required: true
-        default: 'Alpha'
-        options:
-          - Patch
-          - Stable
-          - Alpha
-          - Beta
+      - main  # Changer la branche si nécessaire
 
 jobs:
-  create-release:
+  release:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: '18' # Utilisez la version de Node.js que vous préférez
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18'
 
-    - name: Install pnpm
-      run: npm install -g pnpm
+      - name: Install pnpm dependency
+        run: npm install -g pnpm
 
-    - name: Install dependencies
-      run: pnpm install
+      - name: Install dependencies
+        run: pnpm install
 
-    - name: Build the project
-      run: pnpm run build # Assurez-vous d'avoir une commande build dans votre package.json
+      - name: Run build
+        run: pnpm run build
 
-    - name: Get tag
-      id: get_tag
-      run: echo "::set-output name=tag::${{ github.event.inputs.tag }}"
+      - name: Choose Release Tag
+        id: choose-tag
+        run: |
+          echo "Choose the tag for this release:"
+          echo "1. Patch"
+          echo "2. Stable"
+          echo "3. Alpha"
+          echo "4. Beta"
+          read -p "Enter the number corresponding to the tag: " tag_choice
+          case $tag_choice in
+            1) echo "::set-output name=tag::Patch" ;;
+            2) echo "::set-output name=tag::Stable" ;;
+            3) echo "::set-output name=tag::Alpha" ;;
+            4) echo "::set-output name=tag::Beta" ;;
+            *) echo "Invalid choice"; exit 1 ;;
+          esac
 
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ steps.get_tag.outputs.tag }}
-        release_name: Release ${{ steps.get_tag.outputs.tag }}
-        body: |
-          Release notes for version ${{ steps.get_tag.outputs.tag }}
-        draft: false
-        prerelease: ${{ steps.get_tag.outputs.tag != 'Stable' }}
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.choose-tag.outputs.tag }}-v${{ github.sha }}
+          release_name: Release ${{ steps.choose-tag.outputs.tag }}-${{ github.sha }}
+          draft: false
+          prerelease: false
+          body: |
+            Release created by GitHub Actions.
 
-    - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./path/to/your/build.zip # Changez ceci avec le chemin réel de votre build
-        asset_name: build.zip
-        asset_content_type: application/zip
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./path/to/your/asset.zip
+          asset_name: asset.zip
+          asset_content_type: application/zip
