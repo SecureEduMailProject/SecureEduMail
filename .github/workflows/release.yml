@@ -30,7 +30,7 @@ jobs:
         node-version: '14' # Utilisez la version de Node.js que vous préférez
 
     - name: Install dependencies
-      run: npm install
+      run: pnpm install
 
     - name: Build the project
       run: pnpm run build # Assurez-vous d'avoir une commande build dans votre package.json
