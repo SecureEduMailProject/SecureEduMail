@@ -29,6 +29,9 @@ jobs:
       with:
         node-version: '14' # Utilisez la version de Node.js que vous préférez
 
+    - name: Install pnpm
+      run: npm install -g pnpm
+
     - name: Install dependencies
       run: pnpm install
 
