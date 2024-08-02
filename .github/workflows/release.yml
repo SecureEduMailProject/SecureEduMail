@@ -1,0 +1,63 @@
+name: Create Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag'
+        required: true
+        default: 'Alpha'
+        options:
+          - Patch
+          - Stable
+          - Alpha
+          - Beta
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14' # Utilisez la version de Node.js que vous préférez
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build the project
+      run: pnpm run build # Assurez-vous d'avoir une commande build dans votre package.json
+
+    - name: Get tag
+      id: get_tag
+      run: echo "::set-output name=tag::${{ github.event.inputs.tag }}"
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.get_tag.outputs.tag }}
+        release_name: Release ${{ steps.get_tag.outputs.tag }}
+        body: |
+          Release notes for version ${{ steps.get_tag.outputs.tag }}
+        draft: false
+        prerelease: ${{ steps.get_tag.outputs.tag != 'Stable' }}
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./path/to/your/build.zip # Changez ceci avec le chemin réel de votre build
+        asset_name: build.zip
+        asset_content_type: application/zip
